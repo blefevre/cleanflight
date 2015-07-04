@@ -504,7 +504,7 @@ static void resetConf(void)
         masterConfig.customMixer[i].throttle = 0.0f;
 
 #ifdef LED_STRIP
-    applyDefaultColors(masterConfig.colors, CONFIGURABLE_COLOR_COUNT);
+    applyDefaultColors(masterConfig.colors, masterConfig.adjustableColors, CONFIGURABLE_COLOR_COUNT);
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 

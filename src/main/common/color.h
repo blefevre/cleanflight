@@ -54,3 +54,18 @@ typedef struct hsvColor_s {
     uint8_t s; // 0 - 255
     uint8_t v; // 0 - 255
 } hsvColor_t;
+
+typedef struct hsvAdjColor_s {
+    //Start Color
+    uint16_t h1; // 0 - 359
+    uint8_t s1; // 0 - 255
+    uint8_t v1; // 0 - 255
+    //End Color
+    uint16_t h2; // 0 - 359
+    uint8_t s2; // 0 - 255
+    uint8_t v2; // 0 - 255
+    //Channels
+    uint8_t hc; //0 - 8
+    uint8_t sc; //0 - 8
+    uint8_t vc; //0 - 8
+} hsvAdjColor_t;

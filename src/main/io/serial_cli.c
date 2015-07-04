@@ -851,8 +851,13 @@ static void cliColor(char *cmdline)
     char *ptr;
 
     if (isEmpty(cmdline)) {
+        printf("Static Colors\r\n");
         for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
             printf("color %u %d,%u,%u\r\n", i, masterConfig.colors[i].h, masterConfig.colors[i].s, masterConfig.colors[i].v);
+        }
+        printf("Adjustable Colors (will overwrite static colors if set)\r\n");
+        for (i = 0; i < CONFIGURABLE_COLOR_COUNT; i++) {
+            printf("color %u %u:%u:%u %d,%u,%u %d,%u,%u\r\n", i, masterConfig.adjustableColors[i].hc, masterConfig.adjustableColors[i].sc, masterConfig.adjustableColors[i].vc, masterConfig.adjustableColors[i].h1, masterConfig.adjustableColors[i].s1, masterConfig.adjustableColors[i].v1, masterConfig.adjustableColors[i].h2, masterConfig.adjustableColors[i].s2, masterConfig.adjustableColors[i].v2);
         }
     } else {
         ptr = cmdline;

@@ -229,7 +229,7 @@ uint8_t ledsInRingCount;
 
 ledConfig_t *ledConfigs;
 hsvColor_t *colors;
-
+hsvAdjColor_t *adjustableColors;
 
 #ifdef USE_LED_RING_DEFAULT_CONFIG
 const ledConfig_t defaultLedStripConfig[] = {
@@ -896,6 +896,8 @@ void updateLedStrip(void)
 #ifdef USE_LED_ANIMATION
     bool animationUpdateNow = (int32_t)(now - nextAnimationUpdateAt) >= 0L;
 #endif
+
+    //TODO: colorUpdateNow
     if (!(
             indicatorFlashNow ||
             rotationUpdateNow ||
@@ -908,6 +910,8 @@ void updateLedStrip(void)
     }
 
     static uint8_t indicatorFlashState = 0;
+
+    //TODO: applyLedChannelColor
 
     // LAYER 1
     applyLedModeLayer();
@@ -966,38 +970,86 @@ bool parseColor(uint8_t index, const char *colorConfig)
 {
     const char *remainingCharacters = colorConfig;
 
-    hsvColor_t *color = &colors[index];
-
     bool ok = true;
+    bool adjustable = false;
 
+    uint8_t channel = atoi(remainingCharacters);
+    if(strstr(remainingCharacters, " "))
+    {
+        adjustable = true;
+        if(strstr(remainingCharacters, ":"))
+        {
+            adjustableColors[index].hc = channel;
+            remainingCharacters = strstr(remainingCharacters, ":")+1;
+            adjustableColors[index].sc = atoi(remainingCharacters);
+            remainingCharacters = strstr(remainingCharacters, ":")+1;
+            adjustableColors[index].vc = atoi(remainingCharacters);
+        }
+        else
+        {
+            adjustableColors[index].hc = channel;
+            adjustableColors[index].sc = channel;
+            adjustableColors[index].vc = channel; 
+        }
+        remainingCharacters = strstr(remainingCharacters, " ");
+    } else {
+        memset(&adjustableColors[index], 0, sizeof(hsvAdjColor_t));
+    }
+    
     uint8_t componentIndex;
-    for (componentIndex = 0; ok && componentIndex < HSV_COLOR_COMPONENT_COUNT; componentIndex++) {
+    uint8_t max = adjustable ? 2 * HSV_COLOR_COMPONENT_COUNT : HSV_COLOR_COMPONENT_COUNT;
+
+    for (componentIndex = 0; ok && componentIndex < max; componentIndex++) {
         uint16_t val = atoi(remainingCharacters);
-        switch (componentIndex) {
+        switch (componentIndex%3) {
             case HSV_HUE:
                 if (val > HSV_HUE_MAX) {
                     ok = false;
                     continue;
-
                 }
-                colors[index].h = val;
+                if(!adjustable)
+                    colors[index].h = val;
+                else {
+                    if(componentIndex <= 2)
+                        adjustableColors[index].h1 = val;
+                    else
+                        adjustableColors[index].h2 = val;
+                }
                 break;
             case HSV_SATURATION:
                 if (val > HSV_SATURATION_MAX) {
                     ok = false;
                     continue;
                 }
-                colors[index].s = (uint8_t)val;
+                if(!adjustable)
+                    colors[index].s = (uint8_t)val;
+                else {
+                    if(componentIndex <= 2)
+                        adjustableColors[index].s1 = (uint8_t)val;
+                    else
+                        adjustableColors[index].s2 = (uint8_t)val;
+                }
                 break;
             case HSV_VALUE:
                 if (val > HSV_VALUE_MAX) {
                     ok = false;
                     continue;
                 }
-                colors[index].v = (uint8_t)val;
+                if(!adjustable)
+                    colors[index].v = (uint8_t)val;
+                else {
+                    if(componentIndex <= 2)
+                        adjustableColors[index].v1 = (uint8_t)val;
+                    else
+                        adjustableColors[index].v2 = (uint8_t)val;
+                }
                 break;
         }
-        remainingCharacters = strstr(remainingCharacters, ",");
+        if(componentIndex == 2)
+            remainingCharacters = strstr(remainingCharacters, " ");
+        else
+            remainingCharacters = strstr(remainingCharacters, ",");
+
         if (remainingCharacters) {
             remainingCharacters++;
         } else {
@@ -1006,17 +1058,19 @@ bool parseColor(uint8_t index, const char *colorConfig)
             }
         }
     }
-
     if (!ok) {
-        memset(color, 0, sizeof(hsvColor_t));
+        memset(&colors[index], 0, sizeof(hsvColor_t));
+        memset(&adjustableColors[index], 0, sizeof(hsvAdjColor_t));
+    
     }
 
     return ok;
 }
 
-void applyDefaultColors(hsvColor_t *colors, uint8_t colorCount)
+void applyDefaultColors(hsvColor_t *colors, hsvAdjColor_t *adjColors, uint8_t colorCount)
 {
     memset(colors, 0, colorCount * sizeof(colors));
+    memset(adjColors, 0, colorCount * sizeof(adjColors));
     for (uint8_t colorIndex = 0; colorIndex < colorCount && colorIndex < (sizeof(defaultColors) / sizeof(defaultColors[0])); colorIndex++) {
         *colors++ = *defaultColors[colorIndex];
     }
@@ -1030,10 +1084,11 @@ void applyDefaultLedStripConfig(ledConfig_t *ledConfigs)
     reevalulateLedConfig();
 }
 
-void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse)
+void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse, hsvAdjColor_t *adjColorsToUse)
 {
     ledConfigs = ledConfigsToUse;
     colors = colorsToUse;
+    adjustableColors = adjColorsToUse;
     ledStripInitialised = false;
 }
 
